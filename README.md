@@ -21,7 +21,7 @@ for i in range(100):
 database.insert_many({"user": "hi", "id": 1}, {"user": "ok", "id": 2})
 
 # find example
-print(database.find({"lastname": "marsh"})) # database.find() returns all database
+print(database.find({"lastname": "marsh"})) # database.find() returns all data
 
 # find one example
 print(database.find_one({"name": "eric", "lastname": "cartman"}))
