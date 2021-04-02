@@ -1,87 +1,186 @@
 # Imports
-import json, os, datetime
+import json, os, datetime, time
 
 # Tool Class
 class DatagooseTools:
+    # Read Database
+    def LoadDatabase(file):
+        return json.loads(open(file, "r", encoding="utf-8").read())
+
     # Save Function
-    def Save(file, key, data):
-        database = DatagooseTools.Read(file)
-        database.update({key: data})
+    def SaveFile(file, new):
+        database = DatagooseTools.LoadDatabase(file)
+        new["__time__"] = time.time()
+        database["database"].append(new)
+        
         with open(file, "w", encoding="utf-8") as f:
             json.dump(database, f)
             f.close()
 
-        return True
+        return new
 
-    # Remove Function
-    def Remove(file, data):
-        database = DatagooseTools.Read(file)
-        del database[data]
+    # Save Many Data Function
+    def SaveManyToFile(file, args):
+        database = DatagooseTools.LoadDatabase(file)
+        addeds = []
+        for data in args:
+            if type(data).__name__ == "dict":
+                data["__time__"] = time.time()
+                database["database"].append(data)
+                addeds.append(data)
+                
+                with open(file, "w", encoding="utf-8") as f:
+                    json.dump(database, f)
+                    f.close()
+            else:
+                continue
 
-        with open(file, "w", encoding="utf-8") as f:
-            json.dump(database, f)
-            f.close()
-
-        return True
-
-    # Update Function
-    def Update(file, data, overwrite):
-        database = DatagooseTools.Read(file)
-
-        def MergeUpdate(dict1, dict2):
-            for key, value in dict1.items(): 
-                if key not in dict2:
-                    dict2[key] = value
-                elif isinstance(value, dict):
-                    MergeUpdate(value, dict2[key]) 
-            return dict2
-
-        if overwrite == False:
-            database = MergeUpdate(database, data)
-        else:
-            database.update(data)
-
-        with open(file, "w", encoding="utf-8") as f:
-            json.dump(database, f)
-            f.close()
-
-        return True
-
-    # Read Function
-    def Read(file, test: bool = False):
-        date_first = datetime.datetime.now()
-        with open(file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            f.close()
-
-        if test == True:
-            return {
-                "data": data,
-                "performance": (datetime.datetime.now() - date_first).total_seconds() * 1000
-            }
-        else:
-            return data
+        return addeds
 
     # Find Function
-    def Find(file, data, short):
-        database = DatagooseTools.Read(file)
-        if short:
-            data_split = data.split("?=>")
+    def FindFile(file, data):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+        founds = []
 
-            for split in data_split:
-                database = database.get(split)
+        if data == None:
+            founds = [obj for i, obj in enumerate(db_copy)]
+            return founds
 
-            return database
-        else:
-            return database.get(data)
+        for index, objects in enumerate(db_copy):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
 
-    # Clear Function
-    def Clear(file):
-        with open(file, "w", encoding="utf-8") as f:
-            json.dump({}, f)
-            f.close()
+            if sameValue == len(list(data)):
+                founds.append(objects)
 
-        return True
+        return founds
+
+    # Find One Function
+    def FindOneFromFile(file, data):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+
+        for index, objects in enumerate(db_copy):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
+
+            if sameValue == len(list(data)):
+                return objects
+
+        return None
+
+    # Update Function
+    def UpdateFile(file, data, new):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+        founds = []
+
+        for index, objects in enumerate(db_copy):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
+
+            if sameValue == len(list(data)):
+                founds.append(objects)
+                for values in new.items():
+                    database["database"][index][values[0]] = values[1]
+
+                    with open(file, "w", encoding="utf-8") as f:
+                        json.dump(database, f)
+                        f.close()
+
+        return founds
+
+    # Update One Function
+    def UpdateOneFromFile(file, data, new):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+
+        for index, objects in enumerate(database["database"]):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
+
+            if sameValue == len(list(data)):
+                for values in new.items():
+                    database["database"][index][values[0]] = values[1]
+
+                    with open(file, "w", encoding="utf-8") as f:
+                        json.dump(database, f)
+                        f.close()
+
+                return objects
+
+        return None
+
+    # Delete Function
+    def DeleteFromFile(file, data):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+        deleted = []
+
+        for index, objects in enumerate(db_copy):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
+
+            if sameValue == len(list(data)):
+                database["database"].remove(objects)
+
+                with open(file, "w", encoding="utf-8") as f:
+                    json.dump(database, f)
+                    f.close()
+
+                deleted.append(objects)
+
+        return deleted
+
+    # Delete One Function
+    def DeleteOneFromFile(file, data):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+
+        for index, objects in enumerate(db_copy):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
+
+            if sameValue == len(list(data)):
+                database["database"].remove(objects)
+
+                with open(file, "w", encoding="utf-8") as f:
+                    json.dump(database, f)
+                    f.close()
+
+                return objects
+
+        return None
+
+    # Count Document Function
+    def CountFromFile(file, data):
+        database = DatagooseTools.LoadDatabase(file)
+        db_copy = database["database"].copy()
+
+        counts = 0
+        for index, objects in enumerate(database["database"]):
+            sameValue = 0
+            for item in data.items():
+                if item[0] in objects and item[1] == objects.get(item[0]):
+                    sameValue += 1
+
+            if sameValue == len(list(data)):
+                counts += 1
+
+        return counts
 
 # Main
 class Datagoose:
@@ -97,7 +196,7 @@ class Datagoose:
         # create database if not exists
         if not os.path.isfile(self.location):
             with open(self.location, "w+", encoding="utf-8") as f:
-                json.dump({}, f)
+                json.dump({"database": []}, f)
 
 
     # database info
@@ -107,75 +206,89 @@ class Datagoose:
         """
         return {
             "name": self.name,
-            "database": {
-                "data": DatagooseTools.Read(self.location),
-                "location": self.location,
-                "size": os.path.getsize(self.location)
-            },
+            "location": self.location,
+            "size": os.path.getsize(self.location)
         }
 
-    # insert data to database
-    def insert(self, key, data):
+    def insert(self, data):
         """
-        insert a data to database.
+        insert a data to database
         """
-        return DatagooseTools.Save(self.location, key, data)
+        return DatagooseTools.SaveFile(self.location, data)
 
-    # read data from database
-    def read(self, test: bool = False):
+    def insert_many(self, *args):
         """
-        read a data from database.
+        insert many data to database
         """
-        return DatagooseTools.Read(self.location, test)
+        return DatagooseTools.SaveManyToFile(self.location, args)
 
-    # find data from database
-    def find(self, data, short: bool = True):
+    def find(self, data = None):
         """
-        find a data from database.
+        find data from database
         """
-        return DatagooseTools.Find(self.location, data, short)
+        return DatagooseTools.FindFile(self.location, data)
 
-    # update data from database
-    def update(self, data, overwrite: bool = False):
+    def find_one(self, data = None):
         """
-        update a data from database.
+        find one data from database
         """
-        return DatagooseTools.Update(self.location, data, overwrite)
+        return DatagooseTools.FindOneFromFile(self.location, data)
 
-    # remove data from database
-    def remove(self, data):
+    def update(self, data, new):
         """
-        remove a data from database.
+        update data from database
         """
-        return DatagooseTools.Remove(self.location, data)
+        return DatagooseTools.UpdateFile(self.location, data, new)
 
-    # clear the database
-    def clear(self):
+    def update_one(self, data, new):
         """
-        clear the database
+        update one data from database
         """
-        return DatagooseTools.Clear(self.location)
+        return DatagooseTools.UpdateOneFromFile(self.location, data, new)
 
-    # beautify database
+    def delete(self, data):
+        """
+        delete data from database
+        """
+        return DatagooseTools.DeleteFromFile(self.location, data)
+
+    def delete_one(self, data):
+        """
+        delete one data from database
+        """
+        return DatagooseTools.DeleteOneFromFile(self.location, data)
+
+    def count(self, data):
+        """
+        count documents from database
+        """
+        return DatagooseTools.CountFromFile(self.location, data)
+
     def beautify(self):
         """
-        beautify database.
+        beautify database
         """
-        database = DatagooseTools.Read(self.location)
+        database = DatagooseTools.LoadDatabase(self.location)
         with open(self.location, "w", encoding="utf-8") as f:
             json.dump(database, f, indent=4)
-            f.close()
 
         return True
 
-    # minify database
     def minify(self):
         """
-        minify database.
+        minify database
         """
-        database = DatagooseTools.Read(self.location)
+        database = DatagooseTools.LoadDatabase(self.location)
         with open(self.location, "w", encoding="utf-8") as f:
             json.dump(database, f)
-            f.close()
+
+        return True
+
+    def reset(self):
+        """
+        reset the database (danger zone!)
+        """
+        with open(self.location, "w", encoding="utf-8") as f:
+            json.dump({"database": []}, f)
 
         return True

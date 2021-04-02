@@ -4,62 +4,53 @@ Easy to use database for python
 Quick Tour (example.py):
 ```py
 from datagoose import Datagoose
+import random
 
 # create a new database
 database = Datagoose("example")
 
 # insert example
-database.insert("example", {
-    "data": {
-        "number": 1,
-        "string": "hey!",
-        "float": 5.1
-    },
-    "array": ["h", "e", "l", "l", "o"]
-})
+for i in range(100):
+    database.insert({
+        "name": random.choice(["eric", "kyle", "ike", "stan", "tweek"]),
+        "lastname": random.choice(["cartman", "marsh"]),
+        "age": random.randint(7, 12)
+    })
 
-database.insert("another", {
-    "data": {
-        "number": 1,
-        "string": "hey!",
-        "float": 5.1
-    },
-    "array": ["h", "e", "l", "l", "o"]
-})
+# insert many example
+database.insert_many({"user": "hi", "id": 1}, {"user": "ok", "id": 2})
 
-# remove data example
-database.remove("another")
+# find example
+print(database.find({"lastname": "marsh"})) # database.find() returns all database
 
-# ?=> for go to a data
-print(database.find("example?=>data?=>number")) # you can close ?=> with short=False.
+# find one example
+print(database.find_one({"name": "eric", "lastname": "cartman"}))
 
-# update a data from database
-database.update({
-    "example": {
-        "data": {
-            "number": 10,
-            "string": [1, 2, 3]
-        },
-        "array": {
-            "ok": 200
-        },
-        "new": "hi!"
-    }
-}) # note: if you add overwrite=True, it will delete the old data and paste the new one.
+# update example
+database.update({"name": "eric", "lastname": "cartman"}, {"name": "kyle", "new_data_example": "ok"})
 
-# beautify the database
-database.beautify()
-# database.minify() = minify the database
+# update one example
+database.update_one({"name": "kyle"}, {"lastname": "only one change"})
+print(database.find_one({"lastname": "only one change"}))
 
-# read database
-print(database.read())
+# delete example
+database.delete({"age": 10})
+print(database.find({"age": 10}))
+
+# delete one example
+print(database.delete_one({"name": "eric"}))
+
+# count example
+print(database.count({"name": "ike"}))
+print(database.count({"name": "tweek"}))
+print(database.count({"name": "stan"}))
 
 # database info
 print(database.info())
 
-# kb size
-print(database.info().get("database").get("size") >> 10)
+# beautify database
+database.beautify() # database.minify() for reverse
 
-# clear
-database.clear()
+# reset the database (danger zone!)
+database.reset()
 ```
