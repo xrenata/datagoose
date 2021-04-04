@@ -1,6 +1,9 @@
 # Datagoose
 Easy to use database for python
 
+# Download
+`pip install datagoose`
+
 Quick Tour (example.py):
 ```py
 from datagoose import Datagoose
