@@ -1,8 +1,3 @@
-# Datagoose
-Easy to use database for python
-
-Quick Tour (example.py):
-```py
 from datagoose import Datagoose
 import random
 
@@ -53,4 +48,3 @@ database.beautify() # database.minify() for reverse
 
 # reset the database (danger zone!)
 database.reset()
-```
