@@ -5,17 +5,19 @@ from hashlib import sha256
 # Main
 class Datagoose:
     # init
-    def __init__(self, name):
-        # check name is not string
+    def __init__(self, name: str, path: str = "datagoose_files"):
         if not isinstance(name, str):
             raise TypeError("Name argument only can be string, not {0}.".format(type(name).__name__))
+            
+        if not isinstance(path, str):
+            raise TypeError("Path argument only can be string, not {0}.".format(type(path).__name__))
 
         self.__name = name
-        self.__location = f"./datagoose_files/{self.__name}.json"
+        self.__location = f"./{path}/{self.__name}.json"
 
         # create folder if not exists
-        if not os.path.exists("./datagoose_files"):
-            os.mkdir("./datagoose_files")
+        if not os.path.exists(f"./{path}"):
+            os.mkdir(f"./{path}")
 
         # create database if not exists
         if not os.path.isfile(self.__location):
@@ -190,6 +192,9 @@ class Datagoose:
             json.dump({"database": self.__memory}, f, indent=indent)
             f.close()
 
+    # aliases for dump
+    export = dump
+
     def load(self, location: str, encoding: str = "utf-8", overwrite: bool = True):
         """Loads a json file to the database."""
 
@@ -217,3 +222,14 @@ class Datagoose:
             self.__memory.extend(list(dicts))
             
         return dicts
+
+    def info(self):
+        """Returns database info."""
+
+        return {
+            "hash": sha256(str(self.__memory).encode()).hexdigest(),
+            "length": len(self.__memory),
+            "location": self.__location,
+            "name": self.__name
+        }
+    

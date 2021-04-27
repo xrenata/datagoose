@@ -9,6 +9,15 @@ Datagoose is __easy to use__ database for *python*. with new datagoose;
   - `<Datagoose>.dump()`
 - Bugs fixed.
 
+
+Updates (1.0.2)
+===
+- Added path argument for datagoose.
+  - Usage: `database = Datagoose("example", path="database")`
+- Added new alias for dump (export)
+- Added info method.
+
+<br>
 <br>
 
 **Quick Documentation**
@@ -46,6 +55,11 @@ database = Datagoose("example")
   # Return Type: List
   # Example(s):
     full_database = database.read()
+
+# <Datagoose>.info() -> Returns database info
+  # Return Type: Dict
+  # Example(s):
+    print(database.info())
 
 # <Datagoose>.length() -> Returns data length
   # Return Type: Integer
@@ -267,3 +281,15 @@ if result:
 ```
 
 <p style="font-size: 18px;">Note: for .load(), the JSON will loaded must have 'database' key and value must be a list. Also in list, values must be dict.</p>
+
+<p style="font-size: 18px;">Note: "export" is an aliases for .dump().</p>
+
+```py
+# Example
+
+database.export("./dump.json", indent=4)
+
+# is same with:
+
+database.dump("./dump.json", indent=4)
+```
