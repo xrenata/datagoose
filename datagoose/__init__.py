@@ -184,7 +184,7 @@ class Datagoose:
             raise TypeError("Encoding argument only can be string, not {0}.".format(type(encoding).__name__))
 
         if not isinstance(indent, (type(None), int)):
-            raise TypeError("Indent argument only can be int or none-type, not {0}.".format(type(indent).__name__))
+            raise TypeError("Indent argument only can be int or none, not {0}.".format(type(indent).__name__))
 
         with open(location, "w+", encoding=encoding) as f:
             json.dump({"database": self.__memory}, f, indent=indent)
@@ -200,7 +200,7 @@ class Datagoose:
             raise TypeError("Encoding argument only can be string, not {0}.".format(type(encoding).__name__))
 
         if not isinstance(overwrite, bool):
-            raise TypeError("Overwrite argument only can be bool, not {0}.".format(type(encoding).__name__))
+            raise TypeError("Overwrite argument only can be bool, not {0}.".format(type(overwrite).__name__))
 
         loaded = json.load(open(location, "r", encoding=encoding))
 
