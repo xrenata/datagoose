@@ -10,14 +10,13 @@ Datagoose is __easy to use__ database for *python*. with new datagoose;
 - Bugs fixed.
 
 
-Updates (1.0.2)
+Updates (1.0.3)
 ===
-- Added path argument for datagoose.
-  - Usage: `database = Datagoose("example", path="database")`
-- Added new alias for dump (export)
-- Added info method.
+- info, length and read is now property.
+  - Now you can call with: `<Datagoose>.length` ...
+- Added clear()
+  - Usage: `<Datagoose>.clear()`
 
-<br>
 <br>
 
 **Quick Documentation**
@@ -33,7 +32,6 @@ Updates (1.0.2)
 
 # Methods
 ## Quick Start
-<hr>
 
 ```
 [] - Optinal
@@ -51,20 +49,20 @@ database = Datagoose("example")
 ```
 
 ```py
-# <Datagoose>.read() -> Returns the entire data
+# <Datagoose>.read -> Returns the entire data
   # Return Type: List
   # Example(s):
-    full_database = database.read()
+    full_database = database.read
 
-# <Datagoose>.info() -> Returns database info
+# <Datagoose>.info -> Returns database info
   # Return Type: Dict
   # Example(s):
-    print(database.info())
+    print(database.info)
 
-# <Datagoose>.length() -> Returns data length
+# <Datagoose>.length -> Returns data length
   # Return Type: Integer
   # Example(s):
-    print(database.length())
+    print(database.length)
 
 # <Datagoose>.save([indent:(NoneType | int):None]) -> Saves the database
   # Return Type: Bool
@@ -73,6 +71,11 @@ database = Datagoose("example")
   # Example(s): 
     database.save(4)
     database.save()
+
+# <Datagoose>.clear() -> Clears the entire database
+  # Return Type: Bool
+  # Example(s): 
+    database.clear()
 ```
 # Inserting Data
 ```py
@@ -91,7 +94,7 @@ database = Datagoose("example")
     })
 
 # <Datagoose>.insert_many(*{data:dict}) -> Insert many data to database
-  # Return Type: Generator Object
+  # Return Type: List
   # Args:
     # Description: The data(s) will be inserted into database.
   # Example(s):
@@ -116,7 +119,7 @@ database.insert_one({ "_id": 1, "name": "another_user" })
 # Finding Data
 ```py
 # <Datagoose>.find({data:dict}) -> Find data from database
-  # Return Type: Generator Object
+  # Return Type: List
   # Argument: data
     # Description: The data will find from database.
   # Example(s):

@@ -1,10 +1,7 @@
-# Imports
 import json, os, datetime, random, string, time
 from hashlib import sha256
 
-# Main
 class Datagoose:
-    # init
     def __init__(self, name: str, path: str = "datagoose_files"):
         if not isinstance(name, str):
             raise TypeError("Name argument only can be string, not {0}.".format(type(name).__name__))
@@ -15,54 +12,67 @@ class Datagoose:
         self.__name = name
         self.__location = f"./{path}/{self.__name}.json"
 
-        # create folder if not exists
+
         if not os.path.exists(f"./{path}"):
             os.mkdir(f"./{path}")
 
-        # create database if not exists
+
         if not os.path.isfile(self.__location):
-            with open(self.__location, "w+", encoding="utf-8") as f:
-                json.dump({"database": []}, f)
-                f.close()
+            file = open(self.__location, "w+", encoding="utf-8")
+            json.dump({"database": []}, file)
+            file.close()
         
-        # load database
+
         self.__memory = json.load(open(self.__location, "r", encoding="utf-8"))["database"]
 
-    # creates special id for dict
-    def __create_dict_id(data: dict):
+
+    def __raise_error(value: str, argument_name: str, check):
+        if type(check) == tuple:
+            if not type(value) in check:
+                raise TypeError(f"Argument '{argument_name}' type must be {' / '.join([i.__name__ for i in check])}, not {type(value).__name__}.")
+        else:
+            if not isinstance(value, check):
+                raise TypeError(f"Argument '{argument_name}' type must be {check.__name__}, not {type(value).__name__}.")
+
+
+    def __create_dict_id(data: dict) -> str:
         """Creates special id for dict."""
         if not isinstance(data, dict):
             raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
 
         return sha256(f'{time.time()}_{"".join(random.sample(string.ascii_uppercase + string.digits, random.randint(5, 25)))}_{sha256(json.dumps(data).encode()).hexdigest()}_{"".join(random.sample(string.ascii_lowercase + string.digits, random.randint(10, 25)))}'.encode()).hexdigest()
 
-    def read(self):
+    
+    @property
+    def read(self) -> list:
         """Returns database memory."""
 
         return self.__memory
 
-    def length(self):
+    
+    @property
+    def length(self) -> int:
         """Returns database total length."""
 
         return len(self.__memory)
     
-    def save(self, indent=None):
+    
+    def save(self, indent=None) -> bool:
         """Saves database memory to json file."""
 
-        if not isinstance(indent, (int, type(None))):
-             raise TypeError("Indent argument only can be int or none, not {0}.".format(type(indent).__name__))
+        Datagoose.__raise_error(indent, "indent", (int, type(None)))
 
-        with open(self.__location, "w+", encoding="utf-8") as f:
-            json.dump({"database": self.__memory}, f, indent=indent)
-            f.close()
+        file = open(self.__location, "w+", encoding="utf-8")
+        json.dump({"database": self.__memory}, file, indent=indent)
+        file.close()
 
         return True
 
-    def insert_one(self, data: dict):
+
+    def insert_one(self, data: dict) -> dict:
         """Inserts one data (dict) to database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
         hashed = {
             "_id": Datagoose.__create_dict_id(data),
@@ -73,38 +83,42 @@ class Datagoose:
 
         return hashed
         
-    def insert_many(self, *args):
+    
+    def insert_many(self, *args) -> list:
         """Insert many data (dict args) to database."""
 
         dicts = ({ "_id": Datagoose.__create_dict_id(item), **item } for item in args if isinstance(item, dict))
 
         self.__memory.extend(list(dicts))
-        return dicts
+        return list(dicts)
 
-    def find(self, data: dict):
+    
+    def find(self, data: dict) -> list:
         """Find datas (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
-        return (objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data))
+        return list((objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data)))
 
-    def find_one(self, data: dict):
+    
+    def find_one(self, data: dict) -> dict:
         """Find one (first) data (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
-        return [objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data)][0]
+        for objects in self.__memory:
+            if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data):
+                return objects
 
-    def update(self, data: dict, new_data: dict):
+        return {}
+
+    
+    def update(self, data: dict, new_data: dict) -> list:
         """Update datas (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
-        if not isinstance(new_data, dict):
-            raise TypeError("New data argument only can be dict, not {0}.".format(type(new_data).__name__))
+        Datagoose.__raise_error(new_data, "new_data", dict)
 
         def __update_value(index, new_data):
             for values in new_data.items():
@@ -114,14 +128,13 @@ class Datagoose:
 
         return [__update_value(index, new_data) for index, objects in enumerate(self.__memory) if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data)]
 
-    def update_one(self, data: dict, new_data: dict):
+    
+    def update_one(self, data: dict, new_data: dict) -> dict:
         """Update one data (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
-        if not isinstance(new_data, dict):
-            raise TypeError("New data argument only can be dict, not {0}.".format(type(new_data).__name__))
+        Datagoose.__raise_error(new_data, "new_data", dict)
 
         for index, objects in enumerate(self.__memory):
             if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data):
@@ -132,11 +145,11 @@ class Datagoose:
 
         return {}
 
-    def delete(self, data: dict):
+    
+    def delete(self, data: dict) -> list:
         """Delete datas (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
         def __remove_item(obj):
             self.__memory.remove(obj)
@@ -144,11 +157,11 @@ class Datagoose:
 
         return [__remove_item(objects) for objects in self.__memory.copy() if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data)]
 
-    def delete_one(self, data: dict):
+    
+    def delete_one(self, data: dict) -> dict:
         """Delete one data (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
         for index, objects in enumerate(self.__memory):
             if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data):
@@ -157,55 +170,49 @@ class Datagoose:
 
         return {}
 
-    def count(self, data: dict):
+    
+    def count(self, data: dict) -> int:
         """Count datas (dict) from database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
         return len(list((objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data))))
 
-    def exists(self, data: dict):
+    
+    def exists(self, data: dict) -> bool:
         """Checks a data (dict) is in database."""
 
-        if not isinstance(data, dict):
-            raise TypeError("Data argument only can be dict, not {0}.".format(type(data).__name__))
+        Datagoose.__raise_error(data, "data", dict)
 
         return len(list((objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and item[1] == objects[item[0]]]) == len(data)))) > 1
 
-    # aliases for exists
+
     has = exists
 
-    def dump(self, location: str, encoding: str = "utf-8", indent = None):
+    
+    def dump(self, location: str, encoding: str = "utf-8", indent = None) -> bool:
         """Dumps all the data to a file."""
 
-        if not isinstance(location, str):
-            raise TypeError("Location argument only can be string, not {0}.".format(type(location).__name__))
+        Datagoose.__raise_error(location, "location", str)
+        Datagoose.__raise_error(encoding, "encoding", str)
+        Datagoose.__raise_error(indent, "indent", (int, type(None)))
 
-        if not isinstance(encoding, str):
-            raise TypeError("Encoding argument only can be string, not {0}.".format(type(encoding).__name__))
+        file = open(location, "w+", encoding="utf-8")
+        json.dump({"database": self.__memory}, file, indent=indent)
+        file.close()
 
-        if not isinstance(indent, (type(None), int)):
-            raise TypeError("Indent argument only can be int or none, not {0}.".format(type(indent).__name__))
+        return True
 
-        with open(location, "w+", encoding=encoding) as f:
-            json.dump({"database": self.__memory}, f, indent=indent)
-            f.close()
 
-    # aliases for dump
     export = dump
 
-    def load(self, location: str, encoding: str = "utf-8", overwrite: bool = True):
+    
+    def load(self, location: str, encoding: str = "utf-8", overwrite: bool = True) -> list:
         """Loads a json file to the database."""
 
-        if not isinstance(location, str):
-            raise TypeError("Location argument only can be string, not {0}.".format(type(location).__name__))
-
-        if not isinstance(encoding, str):
-            raise TypeError("Encoding argument only can be string, not {0}.".format(type(encoding).__name__))
-
-        if not isinstance(overwrite, bool):
-            raise TypeError("Overwrite argument only can be bool, not {0}.".format(type(overwrite).__name__))
+        Datagoose.__raise_error(location, "location", str)
+        Datagoose.__raise_error(encoding, "encoding", str)
+        Datagoose.__raise_error(overwrite, "overwrite", bool)
 
         loaded = json.load(open(location, "r", encoding=encoding))
 
@@ -221,9 +228,11 @@ class Datagoose:
         else:
             self.__memory.extend(list(dicts))
             
-        return dicts
+        return list(dicts)
 
-    def info(self):
+
+    @property
+    def info(self) -> dict:
         """Returns database info."""
 
         return {
@@ -233,3 +242,9 @@ class Datagoose:
             "name": self.__name
         }
     
+    
+    def clear(self) -> bool:
+        """Clears the entire database."""
+
+        self.__memory = []
+        return True
