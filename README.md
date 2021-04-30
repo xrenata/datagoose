@@ -17,6 +17,10 @@ Updates (1.0.3)
 - Added clear()
   - Usage: `<Datagoose>.clear()`
 
+Updates (1.0.4)
+===
+- `<Datagoose>.find()` now returns list.
+
 <br>
 
 **Quick Documentation**

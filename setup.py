@@ -10,7 +10,7 @@ classifiers = [
  
 setup(
   name='datagoose',
-  version='1.0.3',
+  version='1.0.4',
   description='Easy to use database for python.',
   long_description_content_type="text/markdown",
   long_description=open('README.md').read(),
