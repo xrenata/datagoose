@@ -1,27 +1,25 @@
 **Datagoose**
 ===
-Datagoose is __easy to use__ database for *python*. with new datagoose;
+Datagoose is __easy to use__ database for *python*. with datagoose;
 
-- Performance increased. datagoose is now optimized for fastest result!
-- Added new functions, and features.
+- Best performance. Datagoose is a lightweight database.
+- Methods that makes your job easier.
+- Regex supports.
+- Safe to use.
+- Auto or manual save, for who wants better performance.
+- Easy to use database. Created for everyone.
+- Rich options. includes hash keys, database path, garbage leak option and more.
 - Can be dumped, also can load a data from JSON file.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
-- Bugs fixed.
 
-
-Updates (1.0.3)
-===
-- info, length and read is now property.
-  - Now you can call with: `<Datagoose>.length` ...
-- Added clear()
-  - Usage: `<Datagoose>.clear()`
-
-Updates (1.0.4)
-===
-- `<Datagoose>.find()` now returns list.
-
-<br>
+# Update (1.1.0)
+- Performance increased
+- Added regex support.
+- Added options.
+- Copy methods.
+- Sort method.
+- Garbage data find & clear.
 
 **Quick Documentation**
 ===
@@ -29,10 +27,39 @@ Updates (1.0.4)
 ## You should know these things before using datagoose;
 - Datagoose keeps datas in **memory**, _not in a file_.
   - You can save with `<Datagoose>.save()` for remember the database next time.
+  - Also now you can enable `AUTO_SAVE` option for auto-saving.
   
 - Datagoose is not a professional database. created for *easy to use* database.
 
 <br>
+
+# Performance
+Test Result (Auto-Save Enabled):
+- 100 Data with insert many:
+  - ```
+    Starting
+    Finished In: 0:00:00.004998
+    ```
+- 1,000 Data with insert many:
+  - ```
+    Starting
+    Finished In: 0:00:00.051003
+    ```
+- 10,000 Data with insert many:
+  - ```
+    Starting
+    Finished In: 0:00:00.468040
+    ```
+- 100,000 Data with insert many:
+  - ```
+    Starting
+    Finished In: 0:00:04.680622
+    ```
+- 1,000,000 Data with insert many:
+  - ```
+    Starting
+    Finished In: 0:00:49.217345
+    ```
 
 # Methods
 ## Quick Start
@@ -52,11 +79,42 @@ from datagoose import Datagoose
 database = Datagoose("example")
 ```
 
+## Options
 ```py
-# <Datagoose>.read -> Returns the entire data
+# Options must be a dict. lets get informations about current options.
+
+# PATH:
+  # Type: str
+  # Description: Custom path for JSON file.
+  # Note: please add path like: "databases/datagoose" not "./databases/datagoose/"
+  # Default: datagoose_files
+# AUTO_SAVE:
+  # Type: bool
+  # Description: When enabled, auto-saves the database when an action performed.
+  # Default: False
+# LEAK_GARBAGE:
+  # Type: bool
+  # Description: Enables adding garbage data to database. not recommending.
+  # Default: False
+# HASHING:
+  # Type: list
+  # Description: Key list for replace data with sha256 hash when inserted.
+  # Default: []
+
+# Example:
+database = Datagoose("example", {
+    "AUTO_SAVE": True, # Now it will save-auto when an action performed.
+    "HASHING": [
+        "PASSWORD" # Now when you insert a data. if data has 'PASSWORD' key, it will replace value with sha256 hash for value.
+    ]
+})
+```
+
+```py
+# <Datagoose>.read() -> Returns the entire data
   # Return Type: List
   # Example(s):
-    full_database = database.read
+    full_database = database.read()
 
 # <Datagoose>.info -> Returns database info
   # Return Type: Dict
@@ -98,7 +156,7 @@ database = Datagoose("example")
     })
 
 # <Datagoose>.insert_many(*{data:dict}) -> Insert many data to database
-  # Return Type: List
+  # Return Type: Bool
   # Args:
     # Description: The data(s) will be inserted into database.
   # Example(s):
@@ -123,14 +181,16 @@ database.insert_one({ "_id": 1, "name": "another_user" })
 # Finding Data
 ```py
 # <Datagoose>.find({data:dict}) -> Find data from database
-  # Return Type: List
+  # Return Type: Generator
   # Argument: data
     # Description: The data will find from database.
   # Example(s):
-    found = list(database.find({
+    found = database.find({
         "age": 25
-    }))
-    print(found) # -> [{'name': 'test', 'age': 25}, {'name': 'test2', 'age': 25}...]
+    }) # -> {'name': 'test', 'age': 25}, {'name': 'test2', 'age': 25} ...
+
+    for result in found:
+      print(result)
 
 # <Datagoose>.find_one({data:dict}) -> Find one data from database
   # Return Type: Dict
@@ -299,4 +359,64 @@ database.export("./dump.json", indent=4)
 # is same with:
 
 database.dump("./dump.json", indent=4)
+```
+# Copying Data
+```py
+# <Datagoose>.copy({data:dict}, [repeat:int:1]) -> Copy data to database
+  # Return Type: Bool
+  # Argument: data
+    # Description: The data will be copied to database.
+  # Argument: repeat
+    # Description: Repeat number for copy. Must be between 1 - 100000
+  # Example(s):
+    database.copy({
+        "total_hours": 1
+    }) # Now datagoose copied all data contains these informations.
+
+# <Datagoose>.repeat_one({data:dict}) -> Copy one data to database
+  # Return Type: Dict
+  # Argument: data
+    # Description: The data will be copied to database.
+  # Example(s):
+    database.copy_one({
+        "user_id": 6811
+    })
+```
+# Collecting Garbage Datas
+```py
+# <Datagoose>.collect_garbage() -> Returns all garbage data in database
+  # Return Type: Generator
+  # Example(s):
+    getgc = database.collect_garbage()
+    for garbage in getgc:
+      print("Found Garbage Data: ", garbage)
+
+# <Datagoose>.clear_garbage() -> Clear all garbage data in database
+  # Return Type: Bool
+  # Example(s):
+    database.clear_garbage()
+```
+# Sorting Database
+```py
+# <Datagoose>.sort_for_key({key:str}, [reverse:bool:False]) -> Sort database for key.
+  # Return Type: List
+  # Argument: key
+    # Description: The key for sort.
+  # Argument: reverse
+    # Description: Reverse the result.
+  # Example(s):
+    point_list = database.sort_for_key("point", reverse=True)
+    winner = point_list[0]
+
+    print(f"Congrats, {winner['name']}. You won the game!")
+```
+
+<p style="font-size: 18px;">Note: .sort_for_key() not changes the database, just returns sorted version of database.</p>
+
+# Using Regex
+```py
+# Quick Example For Using Regex in Datagoose.
+
+for i in db.find({"ANSWER": r"yes|y"}):
+    print(i)
 ```
