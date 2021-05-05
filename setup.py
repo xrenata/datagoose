@@ -10,7 +10,7 @@ classifiers = [
  
 setup(
   name='datagoose',
-  version='1.1.0',
+  version='1.2.0',
   description='Easy to use lightweight database for python.',
   long_description_content_type="text/markdown",
   long_description=open('README.md').read(),
@@ -22,7 +22,7 @@ setup(
       "Bug Tracker": "https://github.com/5elenay/datagoose/issues",
   },
   classifiers=classifiers,
-  keywords='database', 
+  keywords=["database", "lightweight", "json", "python-database", "json-database"], 
   packages=find_packages(),
   install_requires=[''] 
 )

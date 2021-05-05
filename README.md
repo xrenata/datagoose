@@ -9,17 +9,14 @@ Datagoose is __easy to use__ database for *python*. with datagoose;
 - Auto or manual save, for who wants better performance.
 - Easy to use database. Created for everyone.
 - Rich options. includes hash keys, database path, garbage leak option and more.
+- Auto backup
 - Can be dumped, also can load a data from JSON file.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.1.0)
-- Performance increased
-- Added regex support.
-- Added options.
-- Copy methods.
-- Sort method.
-- Garbage data find & clear.
+# Update (1.2.0)
+- Fixed folder bug
+- Added start & stop auto-backup.
 
 **Quick Documentation**
 ===
@@ -84,22 +81,26 @@ database = Datagoose("example")
 # Options must be a dict. lets get informations about current options.
 
 # PATH:
-  # Type: str
+  # Type: String
   # Description: Custom path for JSON file.
   # Note: please add path like: "databases/datagoose" not "./databases/datagoose/"
   # Default: datagoose_files
 # AUTO_SAVE:
-  # Type: bool
+  # Type: Bool
   # Description: When enabled, auto-saves the database when an action performed.
   # Default: False
 # LEAK_GARBAGE:
-  # Type: bool
+  # Type: Bool
   # Description: Enables adding garbage data to database. not recommending.
   # Default: False
 # HASHING:
-  # Type: list
+  # Type: List
   # Description: Key list for replace data with sha256 hash when inserted.
   # Default: []
+# SAFE_MODE:
+  # Type: Bool
+  # Description: Enable/Disable safe mode. do not recommending to disable this option. if you know what are you doing, then good luck. 
+  # Default: True
 
 # Example:
 database = Datagoose("example", {
@@ -316,6 +317,13 @@ result = database.exists({
 if result:
     database.delete_one({ "name": "a_guy_11" })
 ```
+# Using Regex
+```py
+# Quick Example For Using Regex in Datagoose.
+
+for i in db.find({"ANSWER": r"yes|y"}):
+    print(i)
+```
 # Load & Dump
 ```py
 # <Datagoose>.dump({location:str}, [encoding:str:utf-8], [indent:(int | NoneType):None]) -> Dumps the database to JSON file.
@@ -413,10 +421,20 @@ database.dump("./dump.json", indent=4)
 
 <p style="font-size: 18px;">Note: .sort_for_key() not changes the database, just returns sorted version of database.</p>
 
-# Using Regex
+# Auto-Backup \*New in v1.2.0
 ```py
-# Quick Example For Using Regex in Datagoose.
+# <Datagoose>.start_backup([options:dict:{}]) -> Starts backup for every x second. Raises error when already started.
+  # Return Type: None
+  # Argument: options
+    # Description: Options for auto-backup
+  # Example(s):
+    database.start_backup({
+      "TIME": 60 # Second for repeat time. Minimum 30 second, Maximum 31,557,600 (1 year) second.
+      "PATH": "database/backups" # Path for backup files.
+    })
 
-for i in db.find({"ANSWER": r"yes|y"}):
-    print(i)
+# <Datagoose>.stop_backup() -> Stops backup loop. Will not effect if already stopped.
+  # Return Type: Bool
+  # Example(s):
+    database.stop_backup()
 ```

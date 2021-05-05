@@ -5,9 +5,11 @@ from os import path as opath
 from os import mkdir
 from random import sample, randint
 from string import ascii_lowercase, ascii_uppercase, digits
-from time import time
+from time import time, sleep
 from re import findall
 from hashlib import sha256
+from datetime import datetime
+from threading import Thread
 
 class GarbageDataError(Exception):
     pass
@@ -16,6 +18,9 @@ class ValueTooSmall(Exception):
     pass
 
 class ValueTooBig(Exception):
+    pass
+
+class BackupAlreadyStarted(Exception):
     pass
 
 class Datagoose:
@@ -35,10 +40,20 @@ class Datagoose:
         self.__name = name
         self.__location = f"./{self.__path}/{self.__name}.json"
 
+        self.__backup = False
+        self.__backup_time = 60
+        self.__backup_path = "datagoose_backups"
+
+        path_prefix = "./"
+        for path in self.__path.split("/"):
+            if not opath.exists(f"{path_prefix}{path}"):
+                mkdir(f"{path_prefix}{path}")
+            path_prefix += f"{path}/"
+
+        del path_prefix
 
         if not opath.exists(f"./{self.__path}"):
             mkdir(f"./{self.__path}")
-
 
         if not opath.isfile(self.__location):
             file = open(self.__location, "w+", encoding="utf-8")
@@ -352,4 +367,47 @@ class Datagoose:
         Datagoose.__raise_error(key, "key", str)
         Datagoose.__raise_error(reverse, "reverse", bool)
 
-        return sorted((i for i in self.__memory if type(i) == dict and key in i.keys()), key=lambda v: v[key], reverse=reverse) 
+        return sorted((i for i in self.__memory if type(i) == dict and key in i.keys()), key=lambda v: v[key], reverse=reverse)
+
+    def start_backup(self, options: dict = {}) -> None:
+        """Opens backup for database. if backup is already open, it will raise error."""
+
+        Datagoose.__raise_error(options, "options", dict)
+        if self.__safemode:
+            if self.__backup:
+                raise BackupAlreadyStarted("Backup is already started. if you wan't to ignore this error, make 'SAFE_MODE' option False. (not recommended.)")
+
+            if 'TIME' in options and type(options['TIME']) in (float, int, ):
+                if options['TIME'] < 30:
+                    raise ValueTooSmall("Backup time value is too small. The minimum time can be 30 second. if you wan't to ignore this error, make 'SAFE_MODE' option False. (not recommended.)")
+                elif options['TIME'] >  31_557_600:
+                    raise ValueTooBig("Backup time value is too big. The maximum time can be 1 year. if you wan't to ignore this error, make 'SAFE_MODE' option False. (not recommended.)")
+            else:
+                options['TIME'] = 60
+
+
+        self.__backup = True
+        self.__backup_time = options['TIME']
+        self.__backup_path = options['PATH'] if 'PATH' in options and type(options['PATH']) == str else "datagoose_backups"
+
+        def __wrapper():
+            while self.__backup:
+                last_path = "./"
+                for path in self.__backup_path.split("/"):
+                    if not opath.exists(f"{last_path}{path}"):
+                        mkdir(f"{last_path}{path}")
+                    last_path += f"{path}/"
+
+                file = open(f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.json", "w+", encoding="utf-8")
+                jdump({"database": self.__memory}, file, indent=4)
+                file.close()
+
+                sleep(self.__backup_time)
+
+        Thread(target=__wrapper, daemon=True).start()
+
+    def stop_backup(self) -> bool:
+        """Stops backup for database. if backup is closed, it will not effect."""
+
+        self.__backup = False
+        return True
