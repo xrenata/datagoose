@@ -36,6 +36,7 @@ class Datagoose:
         self.__leakgarbage = options['LEAK_GARBAGE'] if 'LEAK_GARBAGE' in options and type(options['LEAK_GARBAGE']) == bool else False
         self.__hashing = [i for i in options['HASHING'] if type(i) == str] if 'HASHING' in options and type(options['HASHING']) == list else []
         self.__safemode = options['SAFE_MODE'] if 'SAFE_MODE' in options and type(options['SAFE_MODE']) == bool else True
+        self.__indent = options['INDENT'] if 'INDENT' in options and type(options['INDENT']) == int else None
 
         self.__name = name
         self.__location = f"./{self.__path}/{self.__name}.json"
@@ -52,9 +53,6 @@ class Datagoose:
 
         del path_prefix
 
-        if not opath.exists(f"./{self.__path}"):
-            mkdir(f"./{self.__path}")
-
         if not opath.isfile(self.__location):
             file = open(self.__location, "w+", encoding="utf-8")
             jdump({"database": []}, file)
@@ -62,10 +60,10 @@ class Datagoose:
 
         self.__memory = jload(open(self.__location, "r", encoding="utf-8"))["database"]
 
-    def __auto_save(option: bool, location: str, memory: list):
+    def __auto_save(option: bool, location: str, memory: list, indent: int):
         if option:
             file = open(location, "w+", encoding="utf-8")
-            jdump({"database": memory}, file, indent=4)
+            jdump({"database": memory}, file, indent=indent)
             file.close()
 
     def __garbage_check(option: bool, data: dict):
@@ -128,7 +126,7 @@ class Datagoose:
         })
 
         self.__memory.append(hashed)
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
 
         return hashed
         
@@ -143,7 +141,7 @@ class Datagoose:
             })
 
         self.__memory.extend(__insert_data(item) for item in args if isinstance(item, dict))
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
         return True
 
     def find(self, data: dict) -> type(x for x in [1, 2, 3]):
@@ -179,7 +177,7 @@ class Datagoose:
             return self.__memory[index]
 
         result = [__update_value(index, new_data) for index, objects in enumerate(self.__memory) if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data)]
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
         return result
     
     def update_one(self, data: dict, new_data: dict) -> dict:
@@ -194,7 +192,7 @@ class Datagoose:
                 for values in new_data.items():
                     self.__memory[index][values[0]] = values[1]
 
-                Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+                Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
                 return self.__memory[index]
 
         return {}
@@ -204,24 +202,27 @@ class Datagoose:
 
         Datagoose.__raise_error(data, "data", dict)
 
-        def __remove_item(obj):
-            self.__memory.remove(obj)
-            return obj
+        shift, deleted = 0, []
+        for index, objects in enumerate(self.__memory[:]):
+            if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data):
+                del self.__memory[index - shift]
+                deleted.append(objects)
+                shift += 1
 
-        result = [__remove_item(objects) for objects in self.__memory.copy() if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data)]
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
-        return result
+
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
+        return deleted
     
     def delete_one(self, data: dict) -> dict:
         """Delete one data (dict) from database."""
 
         Datagoose.__raise_error(data, "data", dict)
 
-        for index, objects in enumerate(self.__memory):
+        for index, objects in enumerate(self.__memory[:]):
             if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data):
-                self.__memory.remove(objects)
+                del self.__memory[index]
                 
-                Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+                Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
                 return objects
 
         return {}
@@ -231,14 +232,14 @@ class Datagoose:
 
         Datagoose.__raise_error(data, "data", dict)
 
-        return len(list((objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data))))
+        return len([objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data)])
     
     def exists(self, data: dict) -> bool:
         """Checks a data (dict) is in database."""
 
         Datagoose.__raise_error(data, "data", dict)
 
-        return len(list((objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data)))) > 1
+        return bool([objects for objects in self.__memory if len([item for item in data.items() if item[0] in objects and (item[1] == objects[item[0]] or ( (type(item[1]), type(objects[item[0]])) == (str, str, ) and findall(item[1], objects[item[0]])))]) == len(data)])
 
     has = exists
     
@@ -278,7 +279,7 @@ class Datagoose:
         else:
             self.__memory.extend(dicts)
             
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
         return True
 
     @property
@@ -297,7 +298,7 @@ class Datagoose:
 
         self.__memory = []
         
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
         return True
 
     def collect_garbage(self) -> type(x for x in [1, 2, 3]):
@@ -314,7 +315,7 @@ class Datagoose:
             if list(item.keys()) == ['_id']:
                 self.__memory.remove(item)
 
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
         return True
         
     def copy(self, data: dict, repeat: int = 1) -> bool:
@@ -342,7 +343,7 @@ class Datagoose:
 
             repeat -= 1
 
-        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+        Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
         return True
         
     def copy_one(self, data: dict) -> dict:
@@ -358,7 +359,7 @@ class Datagoose:
                 }
 
                 self.__memory.append(data)
-                Datagoose.__auto_save(self.__autosave, self.__location, self.__memory)
+                Datagoose.__auto_save(self.__autosave, self.__location, self.__memory, self.__indent)
                 return data
 
     def sort_for_key(self, key: str, reverse: bool = False) -> list:
@@ -399,7 +400,7 @@ class Datagoose:
                     last_path += f"{path}/"
 
                 file = open(f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.json", "w+", encoding="utf-8")
-                jdump({"database": self.__memory}, file, indent=4)
+                jdump({"database": self.__memory}, file, indent=self.__indent)
                 file.close()
 
                 sleep(self.__backup_time)
@@ -411,3 +412,9 @@ class Datagoose:
 
         self.__backup = False
         return True
+
+    @property
+    def is_backup_open(self) -> bool:
+        """Returns auto-backup status."""
+        
+        return self.__backup

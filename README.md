@@ -1,6 +1,6 @@
 **Datagoose**
 ===
-Datagoose is __easy to use__ database for *python*. with datagoose;
+Datagoose is an __easy to use__ JSON based database for python. with datagoose;
 
 - Best performance. Datagoose is a lightweight database.
 - Methods that makes your job easier.
@@ -14,9 +14,11 @@ Datagoose is __easy to use__ database for *python*. with datagoose;
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.2.0)
-- Fixed folder bug
-- Added start & stop auto-backup.
+# Update (1.3.0)
+- Delete method optimized. *Now 20x Faster*
+- Added `is_backup_open` for check backup status.
+- Added indent option for auto-save & auto-backup.
+- Fixed `<Datagoose>.exists()`.
 
 **Quick Documentation**
 ===
@@ -26,7 +28,7 @@ Datagoose is __easy to use__ database for *python*. with datagoose;
   - You can save with `<Datagoose>.save()` for remember the database next time.
   - Also now you can enable `AUTO_SAVE` option for auto-saving.
   
-- Datagoose is not a professional database. created for *easy to use* database.
+- Datagoose is not a professional database.
 
 <br>
 
@@ -91,7 +93,7 @@ database = Datagoose("example")
   # Default: False
 # LEAK_GARBAGE:
   # Type: Bool
-  # Description: Enables adding garbage data to database. not recommending.
+  # Description: Enable/disable adding garbage data to database. not recommending to enabling this option.
   # Default: False
 # HASHING:
   # Type: List
@@ -101,12 +103,17 @@ database = Datagoose("example")
   # Type: Bool
   # Description: Enable/Disable safe mode. do not recommending to disable this option. if you know what are you doing, then good luck. 
   # Default: True
+# INDENT:
+  # Type: Integer
+  # Description: Indent option for auto-save and auto-backup. 
+  # Default: None
 
 # Example:
 database = Datagoose("example", {
-    "AUTO_SAVE": True, # Now it will save-auto when an action performed.
+    "AUTO_SAVE": True,
+    "INDENT": 4,
     "HASHING": [
-        "PASSWORD" # Now when you insert a data. if data has 'PASSWORD' key, it will replace value with sha256 hash for value.
+        "PASSWORD"
     ]
 })
 ```
@@ -260,7 +267,7 @@ database.update_one({
   # Example(s):
     database.delete({
         "total_hours": 1
-    }) # Now datagoose deleted all datas contains key 'total_hours' and key value is 1
+    }) # Now datagoose deleted all data contains key 'total_hours' and key value is 1
 
 # <Datagoose>.delete_one({data:dict}) -> Delete one data from database
   # Return Type: Dict
@@ -333,7 +340,7 @@ for i in db.find({"ANSWER": r"yes|y"}):
   # Argument: encoding
     # Description: Encoding while write.
   # Argument: indent
-    # Description: The indentation while dump the JSON file.
+    # Description: The indentation for the JSON file.
   # Example(s):
     # 1.
       database.dump("./dump.json")
@@ -390,7 +397,7 @@ database.dump("./dump.json", indent=4)
         "user_id": 6811
     })
 ```
-# Collecting Garbage Datas
+# Collecting Garbage Data
 ```py
 # <Datagoose>.collect_garbage() -> Returns all garbage data in database
   # Return Type: Generator
@@ -429,7 +436,7 @@ database.dump("./dump.json", indent=4)
     # Description: Options for auto-backup
   # Example(s):
     database.start_backup({
-      "TIME": 60 # Second for repeat time. Minimum 30 second, Maximum 31,557,600 (1 year) second.
+      "TIME": 60, # Second for repeat time. Minimum 30 second, Maximum 31,557,600 (1 year) second.
       "PATH": "database/backups" # Path for backup files.
     })
 
@@ -437,4 +444,10 @@ database.dump("./dump.json", indent=4)
   # Return Type: Bool
   # Example(s):
     database.stop_backup()
+
+# <Datagoose>.is_backup_open -> Returns backup status.
+  # Return Type: Bool
+  # Example(s):
+    if not database.is_backup_open:
+      print("Backup Disabled.")
 ```
