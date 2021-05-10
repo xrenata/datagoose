@@ -1,3 +1,5 @@
+<img alt="logo" src="./logo.png">
+
 **Datagoose**
 ===
 Datagoose is an __easy to use__ JSON based database for python.
@@ -20,10 +22,8 @@ Datagoose is an __easy to use__ JSON based database for python.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.3.1)
-- Performance increased.
-- Added `<Datagoose>.find_and_sort`
-- Removed indent option *for performance reasons*
+# Update (1.3.2)
+- Bug Fix
 
 # Download
 You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
@@ -348,10 +348,7 @@ for i in db.find({"ANSWER": r"yes|y"}):
   # Argument: encoding
     # Description: Encoding while write.
   # Example(s):
-    # 1.
-      database.dump("./dump.json")
-    # 2.
-      database.dump("./dump.json", indent=4)
+    database.dump("./dump.json")
 
 # <Datagoose>.load({location:str}, [encoding:str:utf-8], [overwrite:bool:True]) -> Load database from JSON file.
   # Return Type: Dict

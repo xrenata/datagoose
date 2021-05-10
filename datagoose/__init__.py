@@ -262,12 +262,11 @@ class Datagoose:
 
     has = exists
 
-    def dump(self, location: str, encoding: str = "utf-8", indent=None) -> bool:
+    def dump(self, location: str, encoding: str = "utf-8") -> bool:
         """Dumps all the data to a file."""
 
         functions.raise_error(location, "location", str)
         functions.raise_error(encoding, "encoding", str)
-        functions.raise_error(indent, "indent", (int, type(None)))
 
         with open(location, "w+", encoding=encoding) as f:
             f.write(jdump({"database": self.__memory}).decode())
