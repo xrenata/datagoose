@@ -1,7 +1,13 @@
 **Datagoose**
 ===
-Datagoose is an __easy to use__ JSON based database for python. with datagoose;
+Datagoose is an __easy to use__ JSON based database for python.
 
+[![Version](https://badge.fury.io/py/datagoose.svg)](https://pypi.python.org/pypi/datagoose)
+[![Downloads](https://img.shields.io/pypi/dm/datagoose.svg)](https://pypi.python.org/pypi/datagoose)
+![Stars](https://img.shields.io/github/stars/5elenay/datagoose)
+![Commits](https://img.shields.io/github/commit-activity/w/5elenay/datagoose)
+
+# With Datagoose:
 - Best performance. Datagoose is a lightweight database.
 - Methods that makes your job easier.
 - Regex supports.
@@ -14,17 +20,19 @@ Datagoose is an __easy to use__ JSON based database for python. with datagoose;
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.3.0)
-- Delete method optimized. *Now 20x Faster*
-- Added `is_backup_open` for check backup status.
-- Added indent option for auto-save & auto-backup.
-- Fixed `<Datagoose>.exists()`.
+# Update (1.3.1)
+- Performance increased.
+- Added `<Datagoose>.find_and_sort`
+- Removed indent option *for performance reasons*
+
+# Download
+You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
 
 **Quick Documentation**
 ===
 # Before Start
 ## You should know these things before using datagoose;
-- Datagoose keeps datas in **memory**, _not in a file_.
+- Datagoose keeps data in **memory**, _not in a file_.
   - You can save with `<Datagoose>.save()` for remember the database next time.
   - Also now you can enable `AUTO_SAVE` option for auto-saving.
   
@@ -36,28 +44,28 @@ Datagoose is an __easy to use__ JSON based database for python. with datagoose;
 Test Result (Auto-Save Enabled):
 - 100 Data with insert many:
   - ```
-    Starting
-    Finished In: 0:00:00.004998
+    Starting Insert...
+    Inserting Finished in  0:00:00.007002
     ```
 - 1,000 Data with insert many:
   - ```
-    Starting
-    Finished In: 0:00:00.051003
+    Starting Insert...
+    Inserting Finished in  0:00:00.032004
     ```
 - 10,000 Data with insert many:
   - ```
-    Starting
-    Finished In: 0:00:00.468040
+    Starting Insert...
+    Inserting Finished in  0:00:00.278020
     ```
 - 100,000 Data with insert many:
   - ```
-    Starting
-    Finished In: 0:00:04.680622
+    Starting Insert...
+    Inserting Finished in  0:00:02.808687
     ```
 - 1,000,000 Data with insert many:
   - ```
-    Starting
-    Finished In: 0:00:49.217345
+    Starting Insert...
+    Inserting Finished in  0:00:31.908481
     ```
 
 # Methods
@@ -103,15 +111,10 @@ database = Datagoose("example")
   # Type: Bool
   # Description: Enable/Disable safe mode. do not recommending to disable this option. if you know what are you doing, then good luck. 
   # Default: True
-# INDENT:
-  # Type: Integer
-  # Description: Indent option for auto-save and auto-backup. 
-  # Default: None
 
 # Example:
 database = Datagoose("example", {
     "AUTO_SAVE": True,
-    "INDENT": 4,
     "HASHING": [
         "PASSWORD"
     ]
@@ -134,13 +137,18 @@ database = Datagoose("example", {
   # Example(s):
     print(database.length)
 
-# <Datagoose>.save([indent:(NoneType | int):None]) -> Saves the database
+# <Datagoose>.save() -> Saves the database
+  # Return Type: Bool
+  # Example(s): 
+    database.save()
+
+# <Datagoose>.save_with_indent([indent:(NoneType | int):None]) -> Saves the database
   # Return Type: Bool
   # Argument: indent
     # Description: Indentation that will write to JSON file.
   # Example(s): 
-    database.save(4)
-    database.save()
+    database.save_with_indent(4)
+    # NOTE: this method is too slow for new update.
 
 # <Datagoose>.clear() -> Clears the entire database
   # Return Type: Bool
@@ -189,7 +197,7 @@ database.insert_one({ "_id": 1, "name": "another_user" })
 # Finding Data
 ```py
 # <Datagoose>.find({data:dict}) -> Find data from database
-  # Return Type: Generator
+  # Return Type: Generator? (Dict Yield)
   # Argument: data
     # Description: The data will find from database.
   # Example(s):
@@ -333,14 +341,12 @@ for i in db.find({"ANSWER": r"yes|y"}):
 ```
 # Load & Dump
 ```py
-# <Datagoose>.dump({location:str}, [encoding:str:utf-8], [indent:(int | NoneType):None]) -> Dumps the database to JSON file.
+# <Datagoose>.dump({location:str}, [encoding:str:utf-8]) -> Dumps the database to JSON file.
   # Return Type: None
   # Argument: location
     # Description: The location that will dump.
   # Argument: encoding
     # Description: Encoding while write.
-  # Argument: indent
-    # Description: The indentation for the JSON file.
   # Example(s):
     # 1.
       database.dump("./dump.json")
@@ -424,11 +430,25 @@ database.dump("./dump.json", indent=4)
     winner = point_list[0]
 
     print(f"Congrats, {winner['name']}. You won the game!")
+
+# <Datagoose>.find_and_sort({data:dict}, {key:str}, [reverse:bool:False]) -> Find and sort database for key.
+  # Return Type: List
+  # Argument: data
+    # Description: The data for find.
+  # Argument: key
+    # Description: The key for sort.
+  # Argument: reverse
+    # Description: Reverse the result.
+  # Example(s):
+    finished = database.find_and_sort({"finished": True}, "time", reverse=True)
+    winner = finished[0]
+
+    print(f"Congrats, {winner['name']}. You won the game!")
 ```
 
 <p style="font-size: 18px;">Note: .sort_for_key() not changes the database, just returns sorted version of database.</p>
 
-# Auto-Backup \*New in v1.2.0
+# Auto-Backup
 ```py
 # <Datagoose>.start_backup([options:dict:{}]) -> Starts backup for every x second. Raises error when already started.
   # Return Type: None

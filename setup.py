@@ -10,7 +10,7 @@ classifiers = [
  
 setup(
   name='datagoose',
-  version='1.3.0',
+  version='1.3.1',
   description='Easy to use lightweight database for python.',
   long_description_content_type="text/markdown",
   long_description=open('README.md').read(),
@@ -24,5 +24,5 @@ setup(
   classifiers=classifiers,
   keywords=["database", "lightweight", "json", "python-database", "json-database"], 
   packages=find_packages(),
-  install_requires=[''] 
+  install_requires=['orjson'] 
 )
