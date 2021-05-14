@@ -1,4 +1,4 @@
-<img alt="logo" src="./logo.png">
+<img alt="logo" src="https://raw.githubusercontent.com/5elenay/datagoose/main/logo.png">
 
 **Datagoose**
 ===
@@ -13,6 +13,7 @@ Datagoose is an __easy to use__ JSON based database for python.
 - Best performance. Datagoose is a lightweight database.
 - Methods that makes your job easier.
 - Regex supports.
+  - You must enable `USE_REGEX` option.
 - Safe to use.
 - Auto or manual save, for who wants better performance.
 - Easy to use database. Created for everyone.
@@ -22,11 +23,15 @@ Datagoose is an __easy to use__ JSON based database for python.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.3.2)
-- Bug Fix
+# Update (1.4.0)
+- Added Events!
+- Regex Support is Now Optional.
+- Bug Fixs.
 
 # Download
 You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
+
+**Note**: Current stable version is `1.3.2`. You can download stable version with `pip install datagoose==1.3.2` ([PyPi](https://pypi.org/project/datagoose/1.3.2/)).
 
 **Quick Documentation**
 ===
@@ -111,10 +116,15 @@ database = Datagoose("example")
   # Type: Bool
   # Description: Enable/Disable safe mode. do not recommending to disable this option. if you know what are you doing, then good luck. 
   # Default: True
+# USE_REGEX:
+  # Type: Bool
+  # Description: Enable/Disable regex option. 
+  # Default: False
 
 # Example:
 database = Datagoose("example", {
     "AUTO_SAVE": True,
+    "USE_REGEX": True,
     "HASHING": [
         "PASSWORD"
     ]
@@ -334,7 +344,8 @@ if result:
 ```
 # Using Regex
 ```py
-# Quick Example For Using Regex in Datagoose.
+# Quick example for using regex in datagoose.
+# You must enable USE_REGEX option for using regex in datagoose.
 
 for i in db.find({"ANSWER": r"yes|y"}):
     print(i)
@@ -400,7 +411,7 @@ database.dump("./dump.json", indent=4)
         "user_id": 6811
     })
 ```
-# Collecting Garbage Data
+# Collecting Garbage Data (Will Be Deprecated!)
 ```py
 # <Datagoose>.collect_garbage() -> Returns all garbage data in database
   # Return Type: Generator
@@ -468,3 +479,54 @@ database.dump("./dump.json", indent=4)
     if not database.is_backup_open:
       print("Backup Disabled.")
 ```
+# Using Events (New in v1.4.0)
+```py
+# You can use an event with .on(event_name, function).
+# Example:
+
+database.on("before_insert", lambda v: print("Starting to insert data: {0}".format(v)))
+# Or:
+def before_insert_function(value):
+    # ...
+    print("Starting to insert value: {0}".format(value))
+
+database.on("before_insert", before_insert_function)
+```
+# Event List
+All events and quick descriptions;
+```py
+{
+  "before_insert": lambda value: None, # Runs before insert.
+  "should_insert": lambda value: True, # Check method for should value insert.
+  "after_insert": lambda value: None, # Runs after insert.
+
+  "before_update": lambda now, changes: None, # Runs before update.
+  "should_update": lambda now, changes: True, # Check method for should data update.
+  "after_update": lambda now, old: None, # Runs after update
+
+  "before_delete": lambda value: None, # Runs before delete.
+  "should_delete": lambda value: True, # Check method for should data delete.
+  "after_delete": lambda value: None, # Runs after delete.
+
+  "before_copy": lambda value: None, # Runs before copy.
+  "should_copy": lambda value: True, # Check method for should data copy.
+  "after_copy": lambda value: None, # Runs after copy.
+
+  "before_save": lambda: None, # Runs before save.
+  "after_save": lambda: None, # Runs after save.
+
+  "before_export": lambda: None, # Runs before using .dump() (export)
+  "after_export": lambda: None, # Runs after using .dump() (export)
+
+  "before_import": lambda: None, # Runs before using .load() (import)
+  "after_import": lambda: None, # Runs after using .load() (import)
+
+  "backup_start": lambda: None, # Runs when auto-backup starts.
+  "backup": lambda: None, # Runs when backup data.
+  "backup_finish": lambda: None, # Runs when auto-backup finish
+
+  "before_garbage_clear": lambda: None, # Runs before garbage clear.
+  "after_garbage_clear": lambda: None # Runs after garbage clear.
+}
+```
+**Note**: If you turn on the `AUTO_SAVE` option, you can see when you use save events and use `insert_many()`, `delete()` etc... You will see it save two times. Because, when you insert, update, delete etc.. Datagoose runs `clear_garbage()`. so actually, thats why when you use `AUTO_SAVE`, you will get less performance. Also `LEAK_GARBAGE` will be deprecated and datagoose will never allow to add garbage data in next versions.

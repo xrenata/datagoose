@@ -1,6 +1,6 @@
 class GarbageDataError(Exception):
     """Garbage Data Exception."""
-    
+
     pass
 
 
