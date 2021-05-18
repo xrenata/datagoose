@@ -8,6 +8,7 @@ from os import mkdir
 from os import path as opath
 from threading import Thread
 from time import sleep
+from typing import Union, Callable
 
 from orjson import dumps as jdump
 from orjson import loads as jload
@@ -16,7 +17,7 @@ from . import errors, functions
 
 
 class Datagoose:
-    def __init__(self, name: str, options: dict = {}):
+    def __init__(self, name: str, options: dict = {}) -> None:
         if not isinstance(name, str):
             raise TypeError(
                 "Name argument only can be string, not {0}.".format(
@@ -31,8 +32,6 @@ class Datagoose:
             options['PATH'], str) else "datagoose_files"
         self.__autosave = options['AUTO_SAVE'] if 'AUTO_SAVE' in options and isinstance(
             options['AUTO_SAVE'], bool) else False
-        self.__leakgarbage = options['LEAK_GARBAGE'] if 'LEAK_GARBAGE' in options and isinstance(
-            options['LEAK_GARBAGE'], bool) else False
         self.__hashing = [
             i for i in options['HASHING'] if isinstance(
                 i, str)] if 'HASHING' in options and isinstance(
@@ -98,14 +97,15 @@ class Datagoose:
         with open(self.__location, "r", encoding="utf-8") as f:
             self.__memory = jload(f.read())["database"]
 
-    def on(self, key: str, event: type(lambda: True)) -> dict:
+    def on(self, key: str, event: Callable) -> dict:
         """Creates event for database."""
 
         functions.raise_error(key, "key", str)
         functions.raise_error(event, "event", type(lambda: True))
 
-        if not key in self.__events.keys():
-            raise KeyError("Event not found. Please check the documentation for all events!")
+        if key not in self.__events.keys():
+            raise KeyError(
+                "Event not found. Please check the documentation for all events!")
 
         self.__events[key] = event
 
@@ -148,11 +148,11 @@ class Datagoose:
 
         return True
 
-    def insert_one(self, data: dict) -> (dict, None):
+    def insert_one(self, data: dict) -> Union[dict, None]:
         """Inserts one data (dict) to database."""
 
         functions.raise_error(data, "data", dict)
-        functions.garbage_check(self.__leakgarbage, data)
+        functions.garbage_check(data)
 
         self.__events["before_insert"](data)
 
@@ -177,7 +177,7 @@ class Datagoose:
         """Insert many data (dict args) to database."""
 
         def __insert_data(data):
-            functions.garbage_check(self.__leakgarbage, data)
+            functions.garbage_check(data)
             self.__events["before_insert"](data)
 
             if self.__events["should_insert"](data):
@@ -502,7 +502,7 @@ class Datagoose:
             self.__events)
         return True
 
-    def copy_one(self, data: dict) -> (dict, None):
+    def copy_one(self, data: dict) -> Union[dict, None]:
         """Copy the found data(s) to the database."""
 
         functions.raise_error(data, "data", dict)
@@ -539,6 +539,13 @@ class Datagoose:
                 dict) and key in i.keys()),
             key=lambda v: v[key],
             reverse=reverse)
+
+    def query(self, query: Callable) -> dict:
+        """Query search for database. Function must return a bool."""
+
+        for object in self.__memory:
+            if query(object):
+                yield object
 
     def start_backup(self, options: dict = {}) -> None:
         """Opens backup for database. if backup is already open, it will raise error."""

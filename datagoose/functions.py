@@ -30,11 +30,10 @@ def auto_save(option: bool, location: str, memory: list, events: dict):
         gccollect()
 
 
-def garbage_check(option: bool, data: dict):
-    if not option and not bool(data):
+def garbage_check(data: dict):
+    if not bool(data):
         raise errors.GarbageDataError(
-            "You can't insert garbage data right now. if you want to disable this setting (not recommended), "
-            "make 'LEAK_GARBAGE' True.")
+            "You can't insert garbage data to database. Try use older version of datagoose.")
 
 
 def hash_keys(keys: list, data: dict):

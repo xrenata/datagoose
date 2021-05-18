@@ -17,16 +17,16 @@ Datagoose is an __easy to use__ JSON based database for python.
 - Safe to use.
 - Auto or manual save, for who wants better performance.
 - Easy to use database. Created for everyone.
-- Rich options. includes hash keys, database path, garbage leak option and more.
+- Rich options. includes hash keys, database path, regexp and more.
 - Auto backup
 - Can be dumped, also can load a data from JSON file.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.4.0)
-- Added Events!
-- Regex Support is Now Optional.
-- Bug Fixs.
+# Update (1.4.1)
+- Removed garbage leak option. Now you can't insert garbage data.
+- Added query search.
+- Fixed some bugs.
 
 # Download
 You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
@@ -103,10 +103,6 @@ database = Datagoose("example")
 # AUTO_SAVE:
   # Type: Bool
   # Description: When enabled, auto-saves the database when an action performed.
-  # Default: False
-# LEAK_GARBAGE:
-  # Type: Bool
-  # Description: Enable/disable adding garbage data to database. not recommending to enabling this option.
   # Default: False
 # HASHING:
   # Type: List
@@ -217,6 +213,14 @@ database.insert_one({ "_id": 1, "name": "another_user" })
 
     for result in found:
       print(result)
+
+# <Datagoose>.query({check:function}) -> Query data from database with function. *New in 1.4.1*
+  # Return Type: Generator? (Dict Yield)
+  # Argument: check
+    # Description: Functions for check, must return bool.
+  # Example(s):
+    for i in database.query(lambda data: 'POINT' in data and data['POINT'] >= 1337):
+      print(i)
 
 # <Datagoose>.find_one({data:dict}) -> Find one data from database
   # Return Type: Dict
@@ -411,7 +415,7 @@ database.dump("./dump.json", indent=4)
         "user_id": 6811
     })
 ```
-# Collecting Garbage Data (Will Be Deprecated!)
+# Collecting Garbage Data
 ```py
 # <Datagoose>.collect_garbage() -> Returns all garbage data in database
   # Return Type: Generator
@@ -529,4 +533,3 @@ All events and quick descriptions;
   "after_garbage_clear": lambda: None # Runs after garbage clear.
 }
 ```
-**Note**: If you turn on the `AUTO_SAVE` option, you can see when you use save events and use `insert_many()`, `delete()` etc... You will see it save two times. Because, when you insert, update, delete etc.. Datagoose runs `clear_garbage()`. so actually, thats why when you use `AUTO_SAVE`, you will get less performance. Also `LEAK_GARBAGE` will be deprecated and datagoose will never allow to add garbage data in next versions.
