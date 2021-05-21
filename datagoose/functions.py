@@ -7,7 +7,7 @@ from time import time
 
 from orjson import dumps as jdump
 
-from . import errors
+from . import errors, encryption
 
 
 def find_item_algorithm(data, obj, regex):
@@ -20,11 +20,18 @@ def find_item_algorithm(data, obj, regex):
         data)
 
 
-def auto_save(option: bool, location: str, memory: list, events: dict):
+def auto_save(
+        option: bool,
+        location: str,
+        memory: list,
+        events: dict,
+        encrypted: bool):
     if option:
         events["before_save"]()
         with open(location, "w+", encoding="utf-8") as f:
-            f.write(jdump({"database": memory}).decode())
+            written_data = jdump({"database": memory}).decode(
+            ) if not encrypted else encryption.encrypt({"database": memory})
+            f.write(written_data)
 
         events["after_save"]()
         gccollect()

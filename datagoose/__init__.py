@@ -1,6 +1,4 @@
-# Hash: bc86c078738529555989c12dfc7afb35fa9908c3fd4bf29bbf9041312ee64fc6
-
-from datetime import datetime
+from datetime import datetime, timedelta
 from gc import collect as gccollect
 from hashlib import sha256
 from json import dump as slowjdump
@@ -13,7 +11,7 @@ from typing import Union, Callable
 from orjson import dumps as jdump
 from orjson import loads as jload
 
-from . import errors, functions
+from . import errors, functions, encryption
 
 
 class Datagoose:
@@ -40,9 +38,11 @@ class Datagoose:
             options['SAFE_MODE'], bool) else True
         self.__useregex = options['USE_REGEX'] if 'USE_REGEX' in options and isinstance(
             options['USE_REGEX'], bool) else False
+        self.__encrypted = options['ENCRYPTED'] if 'ENCRYPTED' in options and isinstance(
+            options['ENCRYPTED'], bool) else False
 
         self.__name = name
-        self.__location = f"./{self.__path}/{self.__name}.json"
+        self.__location = f"./{self.__path}/{self.__name}.{'json' if not self.__encrypted else 'datagoose'}"
 
         self.__backup = False
         self.__backup_time = 60
@@ -92,10 +92,16 @@ class Datagoose:
 
         if not opath.isfile(self.__location):
             with open(self.__location, "w+", encoding="utf-8") as f:
-                f.write(jdump({"database": []}).decode())
+                written_data = jdump({"database": []}).decode(
+                ) if not self.__encrypted else encryption.encrypt({"database": []})
+                f.write(written_data)
 
         with open(self.__location, "r", encoding="utf-8") as f:
-            self.__memory = jload(f.read())["database"]
+            self.__memory = jload(
+                f.read())["database"] if not self.__encrypted else encryption.decrypt(
+                f.read())["database"]
+
+        self.__time_start = datetime.now()
 
     def on(self, key: str, event: Callable) -> dict:
         """Creates event for database."""
@@ -127,7 +133,9 @@ class Datagoose:
 
         self.__events["before_save"]()
         with open(self.__location, "w+", encoding="utf-8") as f:
-            f.write(jdump({"database": self.__memory}).decode())
+            written_data = jdump({"database": self.__memory}).decode(
+            ) if not self.__encrypted else encryption.encrypt({"database": self.__memory})
+            f.write(written_data)
 
         self.__events["after_save"]()
         gccollect()
@@ -141,7 +149,10 @@ class Datagoose:
 
         self.__events["before_save"]()
         with open(self.__location, "w+", encoding="utf-8") as f:
-            slowjdump({"database": self.__memory}, f, indent=indent)
+            if not self.__encrypted:
+                slowjdump({"database": self.__memory}, f, indent=indent)
+            else:
+                f.write(encryption.encrypt({"database": self.__memory}))
 
         self.__events["after_save"]()
         gccollect()
@@ -169,7 +180,7 @@ class Datagoose:
                 self.__autosave,
                 self.__location,
                 self.__memory,
-                self.__events)
+                self.__events, self.__encrypted)
 
             return hashed
 
@@ -197,7 +208,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
 
         return True
 
@@ -265,7 +276,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
         self.clear_garbage()
         return result
 
@@ -289,7 +300,7 @@ class Datagoose:
                     self.__autosave,
                     self.__location,
                     self.__memory,
-                    self.__events)
+                    self.__events, self.__encrypted)
                 return self.__memory[index]
 
         return {}
@@ -316,7 +327,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
         return deleted
 
     def delete_one(self, data: dict) -> dict:
@@ -337,7 +348,7 @@ class Datagoose:
                     self.__autosave,
                     self.__location,
                     self.__memory,
-                    self.__events)
+                    self.__events, self.__encrypted)
                 return objects
 
         return {}
@@ -410,7 +421,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
         return True
 
     @property
@@ -421,7 +432,21 @@ class Datagoose:
             "hash": sha256(str(self.__memory).encode()).hexdigest(),
             "length": len(self.__memory),
             "location": self.__location,
-            "name": self.__name
+            "name": self.__name,
+            "events": self.__events,
+            "options": {
+                "PATH": self.__path,
+                "AUTO_SAVE": self.__autosave,
+                "HASHING": self.__hashing,
+                "SAFE_MODE": self.__safemode,
+                "USE_REGEX": self.__useregex,
+                "ENCRYPTED": self.__encrypted
+            },
+            "backup": {
+                "ENABLED": self.__backup,
+                "TIME": self.__backup_time,
+                "PATH": self.__backup_path
+            }
         }
 
     def clear(self) -> bool:
@@ -433,7 +458,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
         return True
 
     def collect_garbage(self) -> list:
@@ -456,7 +481,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
         return True
 
     def copy(self, data: dict, repeat: int = 1) -> bool:
@@ -499,7 +524,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events)
+            self.__events, self.__encrypted)
         return True
 
     def copy_one(self, data: dict) -> Union[dict, None]:
@@ -522,7 +547,7 @@ class Datagoose:
                         self.__autosave,
                         self.__location,
                         self.__memory,
-                        self.__events)
+                        self.__events, self.__encrypted)
                     return data
                 else:
                     return None
@@ -584,7 +609,9 @@ class Datagoose:
 
                 with open(f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.json", "w+",
                           encoding="utf-8") as f:
-                    f.write(jdump({"database": self.__memory}).decode())
+                    written_data = jdump({"database": self.__memory}).decode(
+                    ) if not self.__encrypted else encryption.encrypt({"database": self.__memory})
+                    f.write(written_data)
 
                 gccollect()
                 self.__events["backup"]()
@@ -605,3 +632,9 @@ class Datagoose:
         """Returns auto-backup status."""
 
         return self.__backup
+
+    @property
+    def uptime(self) -> timedelta:
+        """Returns uptime datetime object."""
+
+        return datetime.now() - self.__time_start

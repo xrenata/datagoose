@@ -20,3 +20,9 @@ class BackupAlreadyStarted(Exception):
     """Backup Already Started Exception."""
 
     pass
+
+
+class DecodeHashError(Exception):
+    """Decode Hash Exception."""
+
+    pass

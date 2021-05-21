@@ -23,15 +23,15 @@ Datagoose is an __easy to use__ JSON based database for python.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.4.1)
-- Removed garbage leak option. Now you can't insert garbage data.
-- Added query search.
-- Fixed some bugs.
+# Update (1.5.0)
+- Added `ENCRYPTED` option for encrypt your data.
+- Added `.uptime` property.
+- `.info` property updated.
 
 # Download
 You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
 
-**Note**: Current stable version is `1.3.2`. You can download stable version with `pip install datagoose==1.3.2` ([PyPi](https://pypi.org/project/datagoose/1.3.2/)).
+**Note**: Current stable version is `1.5.0`. You can download stable version with `pip install datagoose==1.5.0` ([PyPi](https://pypi.org/project/datagoose/1.5.0/)).
 
 **Quick Documentation**
 ===
@@ -116,6 +116,10 @@ database = Datagoose("example")
   # Type: Bool
   # Description: Enable/Disable regex option. 
   # Default: False
+# ENCRYPTED:
+  # Type: Bool
+  # Description: Enable/Disable encrypting data. 
+  # Default: False
 
 # Example:
 database = Datagoose("example", {
@@ -138,23 +142,28 @@ database = Datagoose("example", {
   # Example(s):
     print(database.info)
 
-# <Datagoose>.length -> Returns data length
+# <Datagoose>.length -> Returns total data count
   # Return Type: Integer
   # Example(s):
     print(database.length)
+
+# <Datagoose>.uptime -> Returns database uptime
+  # Return Type: datetime.timedelta
+  # Example(s):
+    print(database.uptime)
 
 # <Datagoose>.save() -> Saves the database
   # Return Type: Bool
   # Example(s): 
     database.save()
 
-# <Datagoose>.save_with_indent([indent:(NoneType | int):None]) -> Saves the database
+# <Datagoose>.save_with_indent([indent:(NoneType | int):None]) -> Saves the database with indetation. Not recommending to use. (outdated.)
   # Return Type: Bool
   # Argument: indent
     # Description: Indentation that will write to JSON file.
   # Example(s): 
     database.save_with_indent(4)
-    # NOTE: this method is too slow for new update.
+    # NOTE: This method is too slow for new update.
 
 # <Datagoose>.clear() -> Clears the entire database
   # Return Type: Bool
