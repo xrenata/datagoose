@@ -25,12 +25,13 @@ def auto_save(
         location: str,
         memory: list,
         events: dict,
-        encrypted: bool):
+        encrypted: bool,
+        pin: int):
     if option:
         events["before_save"]()
         with open(location, "w+", encoding="utf-8") as f:
             written_data = jdump({"database": memory}).decode(
-            ) if not encrypted else encryption.encrypt({"database": memory})
+            ) if not encrypted else encryption.encrypt({"database": memory}, pin)
             f.write(written_data)
 
         events["after_save"]()

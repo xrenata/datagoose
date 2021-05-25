@@ -43,6 +43,8 @@ class Datagoose:
 
         self.__name = name
         self.__location = f"./{self.__path}/{self.__name}.{'json' if not self.__encrypted else 'datagoose'}"
+        self.__pin = options['PIN'] if 'PIN' in options and isinstance(
+            options['PIN'], int) else 2
 
         self.__backup = False
         self.__backup_time = 60
@@ -56,6 +58,10 @@ class Datagoose:
             "before_update": lambda now, changes: None,
             "should_update": lambda now, changes: True,
             "after_update": lambda now, old: None,
+
+            "before_replace": lambda now, new: None,
+            "should_replace": lambda now, new: True,
+            "after_replace": lambda now, old: None,
 
             "before_delete": lambda value: None,
             "should_delete": lambda value: True,
@@ -93,13 +99,13 @@ class Datagoose:
         if not opath.isfile(self.__location):
             with open(self.__location, "w+", encoding="utf-8") as f:
                 written_data = jdump({"database": []}).decode(
-                ) if not self.__encrypted else encryption.encrypt({"database": []})
+                ) if not self.__encrypted else encryption.encrypt({"database": []}, self.__pin)
                 f.write(written_data)
 
         with open(self.__location, "r", encoding="utf-8") as f:
             self.__memory = jload(
                 f.read())["database"] if not self.__encrypted else encryption.decrypt(
-                f.read())["database"]
+                self.__pin, f.read())["database"]
 
         self.__time_start = datetime.now()
 
@@ -134,25 +140,8 @@ class Datagoose:
         self.__events["before_save"]()
         with open(self.__location, "w+", encoding="utf-8") as f:
             written_data = jdump({"database": self.__memory}).decode(
-            ) if not self.__encrypted else encryption.encrypt({"database": self.__memory})
+            ) if not self.__encrypted else encryption.encrypt({"database": self.__memory}, self.__pin)
             f.write(written_data)
-
-        self.__events["after_save"]()
-        gccollect()
-
-        return True
-
-    def save_with_indent(self, indent: int = None) -> bool:
-        """Saves database to JSON file with indent (slow!)."""
-
-        functions.raise_error(indent, "indent", (int, type(None)))
-
-        self.__events["before_save"]()
-        with open(self.__location, "w+", encoding="utf-8") as f:
-            if not self.__encrypted:
-                slowjdump({"database": self.__memory}, f, indent=indent)
-            else:
-                f.write(encryption.encrypt({"database": self.__memory}))
 
         self.__events["after_save"]()
         gccollect()
@@ -180,7 +169,7 @@ class Datagoose:
                 self.__autosave,
                 self.__location,
                 self.__memory,
-                self.__events, self.__encrypted)
+                self.__events, self.__encrypted, self.__pin)
 
             return hashed
 
@@ -208,7 +197,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
 
         return True
 
@@ -276,7 +265,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
         self.clear_garbage()
         return result
 
@@ -300,7 +289,70 @@ class Datagoose:
                     self.__autosave,
                     self.__location,
                     self.__memory,
-                    self.__events, self.__encrypted)
+                    self.__events, self.__encrypted, self.__pin)
+                return self.__memory[index]
+
+        return {}
+
+    def replace(self, data: dict, new_data: dict) -> list:
+        """Replace data (dict) from database."""
+
+        functions.raise_error(data, "data", dict)
+        functions.raise_error(new_data, "new_data", dict)
+
+        def __replace_value(index, n_data):
+            now = self.__memory[index]
+            replaced_data = functions.hash_keys(self.__hashing, {
+                "_id": functions.create_dict_id(n_data),
+                **n_data
+            })
+
+            self.__events["before_replace"](now, replaced_data)
+            if self.__events["should_replace"](now, replaced_data):
+                self.__memory[index] = replaced_data
+
+                self.__events["after_replace"](self.__memory[index], now)
+
+            return self.__memory[index]
+
+        result = [
+            __replace_value(
+                index, new_data) for index, objects in enumerate(
+                self.__memory) if functions.find_item_algorithm(
+                data, objects, self.__useregex)]
+        functions.auto_save(
+            self.__autosave,
+            self.__location,
+            self.__memory,
+            self.__events, self.__encrypted, self.__pin)
+        self.clear_garbage()
+        return result
+
+    def replace_one(self, data: dict, new_data: dict) -> dict:
+        """Replace one data (dict) from database."""
+
+        functions.raise_error(data, "data", dict)
+        functions.raise_error(new_data, "new_data", dict)
+
+        for index, objects in enumerate(self.__memory):
+            if functions.find_item_algorithm(data, objects, self.__useregex):
+                replaced_data = functions.hash_keys(self.__hashing, {
+                    "_id": functions.create_dict_id(new_data),
+                    **new_data
+                })
+
+                self.__events["before_replace"](objects, replaced_data)
+                if self.__events["should_replace"](objects, replaced_data):
+                    self.__memory[index] = replaced_data
+
+                    self.__events["after_replace"](
+                        self.__memory[index], objects)
+
+                functions.auto_save(
+                    self.__autosave,
+                    self.__location,
+                    self.__memory,
+                    self.__events, self.__encrypted, self.__pin)
                 return self.__memory[index]
 
         return {}
@@ -327,7 +379,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
         return deleted
 
     def delete_one(self, data: dict) -> dict:
@@ -348,7 +400,7 @@ class Datagoose:
                     self.__autosave,
                     self.__location,
                     self.__memory,
-                    self.__events, self.__encrypted)
+                    self.__events, self.__encrypted, self.__pin)
                 return objects
 
         return {}
@@ -421,7 +473,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
         return True
 
     @property
@@ -458,7 +510,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
         return True
 
     def collect_garbage(self) -> list:
@@ -481,7 +533,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
         return True
 
     def copy(self, data: dict, repeat: int = 1) -> bool:
@@ -524,7 +576,7 @@ class Datagoose:
             self.__autosave,
             self.__location,
             self.__memory,
-            self.__events, self.__encrypted)
+            self.__events, self.__encrypted, self.__pin)
         return True
 
     def copy_one(self, data: dict) -> Union[dict, None]:
@@ -547,7 +599,7 @@ class Datagoose:
                         self.__autosave,
                         self.__location,
                         self.__memory,
-                        self.__events, self.__encrypted)
+                        self.__events, self.__encrypted, self.__pin)
                     return data
                 else:
                     return None
@@ -599,6 +651,10 @@ class Datagoose:
         self.__backup_path = options['PATH'] if 'PATH' in options and isinstance(
             options['PATH'], str) else "datagoose_backups"
 
+        should_encrypt = options['ENCRYPTED'] if 'ENCRYPTED' in options and isinstance(
+            options['ENCRYPTED'], bool) else True
+        print(should_encrypt)
+
         def __wrapper():
             while self.__backup:
                 last_path = "./"
@@ -607,10 +663,12 @@ class Datagoose:
                         mkdir(f"{last_path}{path}")
                     last_path += f"{path}/"
 
-                with open(f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.json", "w+",
+                will_encrypt = self.__encrypted and should_encrypt
+
+                with open(f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.{'json' if not will_encrypt else 'datagoose'}", "w+",
                           encoding="utf-8") as f:
                     written_data = jdump({"database": self.__memory}).decode(
-                    ) if not self.__encrypted else encryption.encrypt({"database": self.__memory})
+                    ) if not will_encrypt else encryption.encrypt({"database": self.__memory}, self.__pin)
                     f.write(written_data)
 
                 gccollect()

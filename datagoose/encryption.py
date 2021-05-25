@@ -6,17 +6,17 @@ from hashlib import sha256
 from . import errors
 
 
-def encrypt(data: dict) -> str:
+def encrypt(data: dict, pin: int) -> str:
     string_data = jdump(data)
     encoded = b64encode(string_data)
     keycode_generator = (i for i in encoded)
 
     encrypted = "=>".join(
-        sorted(str((i + v) * 2) + f"x{i}" for i, v in enumerate(keycode_generator)))
-    return sha256(string_data).hexdigest() + f"+{encrypted}"
+        sorted((str((i + v) * pin) + f"x{i}" for i, v in enumerate(keycode_generator)), reverse=len(data) % 2 == 0))
+    return f"{sha256(string_data).hexdigest()}+{encrypted}"
 
 
-def decrypt(data: str) -> dict:
+def decrypt(pin: int, data: str) -> dict:
     hash_split = data.split("+")
     splitted = hash_split[1].split("=>")
 
@@ -24,7 +24,7 @@ def decrypt(data: str) -> dict:
 
     for data in sorted(splitted, key=lambda i: int(i.split("x")[1])):
         result = data.split("x")
-        key_decode = int(result[0]) // 2
+        key_decode = int(result[0]) // pin
         key_decode -= int(result[1])
 
         base64 += chr(key_decode)

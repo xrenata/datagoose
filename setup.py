@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
  
 classifiers = [
-  'Development Status :: 5 - Production/Stable',
+  'Development Status :: 3 - Alpha',
   'Intended Audience :: Developers',
   'Operating System :: OS Independent',
   'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -10,8 +10,8 @@ classifiers = [
  
 setup(
   name='datagoose',
-  version='1.5.0',
-  description='Easy to use JSON based database for python.',
+  version='1.6.0',
+  description='Easy to use 👋 fast & lightweight ☄️ secure 🔐 JSON based database for python! 🐍.',
   long_description_content_type="text/markdown",
   long_description=open('README.md').read(),
   url='https://github.com/5elenay/datagoose/', 
@@ -22,7 +22,7 @@ setup(
       "Bug Tracker": "https://github.com/5elenay/datagoose/issues",
   },
   classifiers=classifiers,
-  keywords=["database", "lightweight", "json", "python-database", "json-database"], 
+  keywords=["database", "lightweight", "json", "python-database", "json-database", "fast", "secure"], 
   packages=find_packages(),
   install_requires=['orjson'] 
 )

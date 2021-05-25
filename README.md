@@ -23,10 +23,13 @@ Datagoose is an __easy to use__ JSON based database for python.
   - `<Datagoose>.load()`
   - `<Datagoose>.dump()`
 
-# Update (1.5.0)
-- Added `ENCRYPTED` option for encrypt your data.
-- Added `.uptime` property.
-- `.info` property updated.
+# Update (1.6.0)
+- Added `PIN` option for encryption.
+  - If you used `1.5.0` encryption, use PIN `2` or dump your database and make a new one. 
+- Added `.replace`, `.replace_one` methods.
+- Added 3 new event.
+- Added `ENCRYPTED` option for auto-backup.
+- Removed `.save_with_indent` method.
 
 # Download
 You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
@@ -120,11 +123,17 @@ database = Datagoose("example")
   # Type: Bool
   # Description: Enable/Disable encrypting data. 
   # Default: False
+# PIN:
+  # Type: Int
+  # Description: Decryption key for encryption. you should not expose this key.
+  # Default: 2
 
 # Example:
 database = Datagoose("example", {
     "AUTO_SAVE": True,
     "USE_REGEX": True,
+    "ENCRYPTED": True,
+    "PIN": 69 * 420,
     "HASHING": [
         "PASSWORD"
     ]
@@ -156,14 +165,6 @@ database = Datagoose("example", {
   # Return Type: Bool
   # Example(s): 
     database.save()
-
-# <Datagoose>.save_with_indent([indent:(NoneType | int):None]) -> Saves the database with indetation. Not recommending to use. (outdated.)
-  # Return Type: Bool
-  # Argument: indent
-    # Description: Indentation that will write to JSON file.
-  # Example(s): 
-    database.save_with_indent(4)
-    # NOTE: This method is too slow for new update.
 
 # <Datagoose>.clear() -> Clears the entire database
   # Return Type: Bool
@@ -256,7 +257,7 @@ database.insert_one({ "_id": 1, "name": "another_user" })
         "age": 26
     }) # Now every data has 'age' and 'age' key value is 25, changed with 'age' = 26 
     
-# <Datagoose>.update_one({data:dict}, {new_data:dict}) -> Find one data from database
+# <Datagoose>.update_one({data:dict}, {new_data:dict}) -> Update one data from database
   # Return Type: Dict
   # Argument: data
     # Description: The data will find from database.
@@ -289,6 +290,40 @@ database.update_one({
     "total_kill": 16
 }
 ```
+# Replace Data
+```py
+# <Datagoose>.replace({data:dict}, {new_data:dict}) -> Replace data from database
+  # Return Type: List
+  # Argument: data
+    # Description: The data will find from database.
+  # Argument: new_data
+    # Description: The data will be replaced with found data.
+  # Example(s):
+    database.replace({
+        "age": 25
+    }, {
+        "thing": True, 
+        "age": 26
+    }) # Now every data has 'age' and 'age' key value is 25, changed with new data.
+    
+# <Datagoose>.replace_one({data:dict}, {new_data:dict}) -> Replace one data from database
+  # Return Type: Dict
+  # Argument: data
+    # Description: The data will find from database.
+  # Argument: new_data
+    # Description: The data will be replaced with found data.
+  # Example(s):
+    database.replace_one({
+        "user_id": 2486718956
+    }, {
+        "banned": True,
+        "ban_time": "30d",
+        "user_id": 2486718956
+    }) # Now only one data replaced.
+```
+
+<p style="font-size: 18px;">Note: The difference between update and replace, replace changes the entire data with new one. update only updates the key that given.</p>
+
 # Deleting Data
 ```py
 # <Datagoose>.delete({data:dict}) -> Delete data from database
@@ -478,7 +513,8 @@ database.dump("./dump.json", indent=4)
   # Example(s):
     database.start_backup({
       "TIME": 60, # Second for repeat time. Minimum 30 second, Maximum 31,557,600 (1 year) second.
-      "PATH": "database/backups" # Path for backup files.
+      "PATH": "database/backups", # Path for backup files.
+      "ENCRYPTED": True # Encryption for database.
     })
 
 # <Datagoose>.stop_backup() -> Stops backup loop. Will not effect if already stopped.
@@ -492,7 +528,7 @@ database.dump("./dump.json", indent=4)
     if not database.is_backup_open:
       print("Backup Disabled.")
 ```
-# Using Events (New in v1.4.0)
+# Using Events
 ```py
 # You can use an event with .on(event_name, function).
 # Example:
@@ -515,7 +551,11 @@ All events and quick descriptions;
 
   "before_update": lambda now, changes: None, # Runs before update.
   "should_update": lambda now, changes: True, # Check method for should data update.
-  "after_update": lambda now, old: None, # Runs after update
+  "after_update": lambda now, old: None, # Runs after update.
+
+  "before_replace": lambda now, new: None, # Runs before replace.
+  "should_replace": lambda now, new: True, # Check method for should data replace.
+  "after_replace": lambda now, old: None, # Runs after replace.
 
   "before_delete": lambda value: None, # Runs before delete.
   "should_delete": lambda value: True, # Check method for should data delete.
