@@ -34,7 +34,7 @@ Datagoose is an __easy to use__ JSON based database for python.
 # Download
 You can download with `pip install -U datagoose` ([PyPi Page](https://pypi.org/project/datagoose/)) or, you can use with source code.
 
-**Note**: Current stable version is `1.5.0`. You can download stable version with `pip install datagoose==1.5.0` ([PyPi](https://pypi.org/project/datagoose/1.5.0/)).
+**Note**: Current stable version is `1.6.1`. You can download stable version with `pip install datagoose==1.6.1` ([PyPi](https://pypi.org/project/datagoose/1.6.1/)).
 
 **Quick Documentation**
 ===

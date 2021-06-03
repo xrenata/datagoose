@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from gc import collect as gccollect
 from hashlib import sha256
-from json import dump as slowjdump
 from os import mkdir
 from os import path as opath
 from threading import Thread
@@ -15,16 +14,12 @@ from . import errors, functions, encryption
 
 
 class Datagoose:
-    def __init__(self, name: str, options: dict = {}) -> None:
-        if not isinstance(name, str):
-            raise TypeError(
-                "Name argument only can be string, not {0}.".format(
-                    type(name).__name__))
+    def __init__(self, name: str, options=None) -> None:
+        if options is None:
+            options = {}
 
-        if not isinstance(options, dict):
-            raise TypeError(
-                "Options argument only can be dict, not {0}.".format(
-                    type(options).__name__))
+        functions.raise_error(name, "name", str)
+        functions.raise_error(options, "options", dict)
 
         self.__path = options['PATH'] if 'PATH' in options and isinstance(
             options['PATH'], str) else "datagoose_files"
@@ -223,7 +218,7 @@ class Datagoose:
 
         founds = (
             objects for objects in self.__memory if functions.find_item_algorithm(
-                data, objects, self.__useregex))
+            data, objects, self.__useregex))
 
         return sorted(founds, key=lambda v: v[key],
                       reverse=reverse)
@@ -620,13 +615,15 @@ class Datagoose:
     def query(self, query: Callable) -> dict:
         """Query search for database. Function must return a bool."""
 
-        for object in self.__memory:
-            if query(object):
-                yield object
+        for obj in self.__memory:
+            if query(obj):
+                yield obj
 
-    def start_backup(self, options: dict = {}) -> None:
+    def start_backup(self, options=None) -> None:
         """Opens backup for database. if backup is already open, it will raise error."""
 
+        if options is None:
+            options = {}
         functions.raise_error(options, "options", dict)
         if self.__safemode:
             if self.__backup:
@@ -665,8 +662,10 @@ class Datagoose:
 
                 will_encrypt = self.__encrypted and should_encrypt
 
-                with open(f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.{'json' if not will_encrypt else 'datagoose'}", "w+",
-                          encoding="utf-8") as f:
+                with open(
+                        f"./{self.__backup_path}/backup_{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}.{'json' if not will_encrypt else 'datagoose'}",
+                        "w+",
+                        encoding="utf-8") as f:
                     written_data = jdump({"database": self.__memory}).decode(
                     ) if not will_encrypt else encryption.encrypt({"database": self.__memory}, self.__pin)
                     f.write(written_data)
